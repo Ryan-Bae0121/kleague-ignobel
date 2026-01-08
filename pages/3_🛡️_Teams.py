@@ -22,7 +22,12 @@ def load_team_zone_data():
     except FileNotFoundError:
         return pd.DataFrame(), pd.DataFrame()
 
-st.set_page_config(page_title="Teams", page_icon="🛡️", layout="wide")
+st.set_page_config(
+    page_title="Teams",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Inject CSS
 inject_custom_css()

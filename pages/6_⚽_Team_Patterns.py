@@ -19,7 +19,7 @@ st.set_page_config(
     page_title="Team Patterns | K League 이그노벨상",
     page_icon="⚽",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Inject CSS

@@ -5,7 +5,12 @@ import streamlit as st
 from src.config import AWARDS
 from src.ui_components import inject_custom_css
 
-st.set_page_config(page_title="Methodology", page_icon="📊", layout="wide")
+st.set_page_config(
+    page_title="Methodology",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Inject CSS
 inject_custom_css()
