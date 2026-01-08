@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+.idea/
+.vscode/
+*.log
+
+# Keep artifacts for deployment (they're small enough)
+# artifacts/*.parquet
+# !artifacts/.gitkeep
+
+# Ignore data files (not needed for deployment)
+data/
+*.csv
+*.xlsx
+*.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
