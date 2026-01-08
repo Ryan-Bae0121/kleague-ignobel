@@ -54,9 +54,12 @@ def render_sidebar_toggle():
 def inject_custom_css():
     """Inject custom dark theme CSS with dynamic sidebar display"""
     # Determine sidebar display state
-    sidebar_display = "block" if st.session_state.get('sidebar_open', True) else "none"
+    sidebar_open = st.session_state.get('sidebar_open', True)
+    sidebar_display = "block" if sidebar_open else "none"
+    sidebar_visibility = "visible" if sidebar_open else "hidden"
+    margin_left = 300 if sidebar_open else 0
     
-    st.markdown(f"""
+    css_content = """
     <style>
         /* Dark Theme Base */
         .stApp {{
@@ -66,7 +69,7 @@ def inject_custom_css():
         /* Force sidebar display state */
         [data-testid="stSidebar"] {{
             display: {sidebar_display} !important;
-            visibility: {"visible" if sidebar_display == "block" else "hidden"} !important;
+            visibility: {sidebar_visibility} !important;
             width: 300px !important;
             position: fixed !important;
             left: 0 !important;
@@ -80,15 +83,15 @@ def inject_custom_css():
         }}
         
         [data-testid="stMainContainer"] {{
-            margin-left: {300 if sidebar_display == "block" else 0}px !important;
+            margin-left: {margin_left}px !important;
             padding-left: 0 !important;
             transition: margin-left 0.3s ease !important;
         }}
         
         /* Ensure content area adjusts for sidebar */
         .stApp > [data-testid="stMainContainer"] {{
-            width: calc(100% - {300 if sidebar_display == "block" else 0}px) !important;
-            margin-left: {300 if sidebar_display == "block" else 0}px !important;
+            width: calc(100% - {margin_left}px) !important;
+            margin-left: {margin_left}px !important;
             transition: all 0.3s ease !important;
         }}
         
@@ -98,13 +101,13 @@ def inject_custom_css():
         header {{visibility: hidden;}}
         
         /* Typography */
-        h1, h2, h3 {
+        h1, h2, h3 {{
             color: #f8f9fa !important;
             font-weight: 700;
-        }
+        }}
         
         /* Card Styles */
-        .award-card {
+        .award-card {{
             background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
             border: 1px solid #30363d;
             border-radius: 20px;
@@ -112,156 +115,156 @@ def inject_custom_css():
             margin: 16px 0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
-        }
+        }}
         
-        .award-card:hover {
+        .award-card:hover {{
             transform: translateY(-2px);
             box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
             border-color: #facc15;
-        }
+        }}
         
-        .award-card-large {
+        .award-card-large {{
             background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
             border: 2px solid #30363d;
             border-radius: 24px;
             padding: 32px;
             margin: 20px 0;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-        }
+        }}
         
-        .award-title {
+        .award-title {{
             font-size: 1.5rem;
             font-weight: 700;
             color: #facc15;
             margin-bottom: 12px;
-        }
+        }}
         
-        .award-title-large {
+        .award-title-large {{
             font-size: 2rem;
             font-weight: 700;
             color: #facc15;
             margin-bottom: 16px;
-        }
+        }}
         
-        .award-player {
+        .award-player {{
             font-size: 1.25rem;
             font-weight: 600;
             color: #f8f9fa;
             margin: 8px 0;
-        }
+        }}
         
-        .award-team {
+        .award-team {{
             font-size: 1rem;
             color: #8b949e;
             margin-bottom: 16px;
-        }
+        }}
         
-        .award-metric {
+        .award-metric {{
             font-size: 3rem;
             font-weight: 800;
             color: #facc15;
             margin: 16px 0;
             line-height: 1;
-        }
+        }}
         
-        .award-metric-label {
+        .award-metric-label {{
             font-size: 0.9rem;
             color: #8b949e;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 8px;
-        }
+        }}
         
-        .award-subtext {
+        .award-subtext {{
             font-size: 0.95rem;
             color: #c9d1d9;
             margin-top: 12px;
             line-height: 1.6;
-        }
+        }}
         
-        .badge {
+        .badge {{
             display: inline-block;
             padding: 6px 12px;
             border-radius: 12px;
             font-size: 0.85rem;
             font-weight: 700;
             margin-right: 8px;
-        }
+        }}
         
-        .badge-rank-1 {
+        .badge-rank-1 {{
             background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
             color: #0e1117;
-        }
+        }}
         
-        .badge-rank-2 {
+        .badge-rank-2 {{
             background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
             color: #ffffff;
-        }
+        }}
         
-        .badge-rank-3 {
+        .badge-rank-3 {{
             background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
             color: #ffffff;
-        }
+        }}
         
-        .badge-rank {
+        .badge-rank {{
             background: #30363d;
             color: #f8f9fa;
-        }
+        }}
         
-        .badge-percentile {
+        .badge-percentile {{
             background: #21262d;
             color: #58a6ff;
             border: 1px solid #30363d;
-        }
+        }}
         
         /* Hero Section */
-        .hero-section {
+        .hero-section {{
             text-align: center;
             padding: 60px 20px 40px;
             background: linear-gradient(180deg, #0e1117 0%, #161b22 100%);
             border-bottom: 2px solid #30363d;
             margin-bottom: 40px;
-        }
+        }}
         
-        .hero-title {
+        .hero-title {{
             font-size: 3.5rem;
             font-weight: 900;
             color: #facc15;
             margin-bottom: 16px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
+        }}
         
-        .hero-subtitle {
+        .hero-subtitle {{
             font-size: 1.3rem;
             color: #8b949e;
             max-width: 800px;
             margin: 0 auto;
             line-height: 1.8;
-        }
+        }}
         
         /* Profile Section */
-        .profile-header {
+        .profile-header {{
             background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
             border-radius: 24px;
             padding: 40px;
             margin-bottom: 32px;
             border: 2px solid #30363d;
-        }
+        }}
         
-        .profile-name {
+        .profile-name {{
             font-size: 2.5rem;
             font-weight: 800;
             color: #f8f9fa;
             margin-bottom: 8px;
-        }
+        }}
         
-        .profile-team {
+        .profile-team {{
             font-size: 1.3rem;
             color: #8b949e;
             margin-bottom: 24px;
-        }
+        }}
         
-        .profile-summary {
+        .profile-summary {{
             font-size: 1.1rem;
             color: #c9d1d9;
             line-height: 1.8;
@@ -269,98 +272,98 @@ def inject_custom_css():
             background: #0e1117;
             border-radius: 12px;
             border-left: 4px solid #facc15;
-        }
+        }}
         
         /* Stats Grid */
-        .stats-grid {
+        .stats-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin: 24px 0;
-        }
+        }}
         
-        .stat-card {
+        .stat-card {{
             background: #161b22;
             border: 1px solid #30363d;
             border-radius: 16px;
             padding: 20px;
             text-align: center;
-        }
+        }}
         
-        .stat-value {
+        .stat-value {{
             font-size: 2rem;
             font-weight: 700;
             color: #facc15;
             margin-bottom: 4px;
-        }
+        }}
         
-        .stat-label {
+        .stat-label {{
             font-size: 0.9rem;
             color: #8b949e;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
+        }}
         
         /* Comparison Card */
-        .comparison-card {
+        .comparison-card {{
             background: #161b22;
             border: 1px solid #30363d;
             border-radius: 16px;
             padding: 20px;
             margin: 12px 0;
-        }
+        }}
         
-        .comparison-label {
+        .comparison-label {{
             font-size: 0.85rem;
             color: #8b949e;
             text-transform: uppercase;
             margin-bottom: 8px;
-        }
+        }}
         
-        .comparison-value {
+        .comparison-value {{
             font-size: 1.5rem;
             font-weight: 700;
             color: #f8f9fa;
-        }
+        }}
         
-        .comparison-diff {
+        .comparison-diff {{
             font-size: 0.9rem;
             margin-top: 4px;
-        }
+        }}
         
-        .comparison-diff.positive {
+        .comparison-diff.positive {{
             color: #3fb950;
-        }
+        }}
         
-        .comparison-diff.negative {
+        .comparison-diff.negative {{
             color: #f85149;
-        }
+        }}
         
         /* Expandable Section */
-        .expandable {
+        .expandable {{
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #30363d;
-        }
+        }}
         
-        .expandable-content {
+        .expandable-content {{
             font-size: 0.9rem;
             color: #8b949e;
             line-height: 1.6;
-        }
+        }}
         
         /* Section Title */
-        .section-title {
+        .section-title {{
             font-size: 2rem;
             font-weight: 700;
             color: #f8f9fa;
             margin: 40px 0 24px;
             padding-bottom: 16px;
             border-bottom: 2px solid #30363d;
-        }
+        }}
         
         /* Formula Box */
-        .formula-box {
+        .formula-box {{
             background: #0e1117;
             border: 1px solid #30363d;
             border-left: 4px solid #facc15;
@@ -369,25 +372,32 @@ def inject_custom_css():
             margin: 16px 0;
             font-family: 'Courier New', monospace;
             color: #c9d1d9;
-        }
+        }}
         
         /* Comparison colors */
-        .worse {
+        .worse {{
             color: #f85149 !important;
             font-weight: 800;
-        }
+        }}
         
-        .better {
+        .better {{
             color: #3fb950 !important;
             font-weight: 800;
-        }
+        }}
         
-        .neutral {
+        .neutral {{
             color: #8b949e !important;
             font-weight: 700;
-        }
+        }}
     </style>
-    """, unsafe_allow_html=True)
+    """.format(
+        sidebar_display=sidebar_display,
+        sidebar_visibility=sidebar_visibility,
+        margin_left=margin_left
+    )
+    
+    st.markdown(css_content, unsafe_allow_html=True)
+
 
 
 def render_award_card(award_icon: str, award_title: str, player_name: str, 
