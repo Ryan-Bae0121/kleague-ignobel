@@ -13,25 +13,30 @@ def inject_custom_css():
             background-color: #0e1117;
         }
         
-        /* Sidebar: Always keep expanded */
-        [data-testid="stSidebar"] {
-            position: fixed !important;
-            left: 0;
-            top: 0;
-            height: 100vh;
-            z-index: 100;
-            visibility: visible !important;
-            margin-left: 0 !important;
-        }
-        
-        [data-testid="stMainContainer"] {
-            margin-left: 300px;
-        }
-        
-        /* Sidebar styling - keep visible */
+        /* Force sidebar to always be visible */
         [data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
+            width: 300px !important;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            transform: translateX(0) !important;
+            margin-left: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        [data-testid="stMainContainer"] {
+            margin-left: 300px !important;
+            padding-left: 0 !important;
+        }
+        
+        /* Ensure content area adjusts for sidebar */
+        .stApp > [data-testid="stMainContainer"] {
+            width: calc(100% - 300px) !important;
+            margin-left: 300px !important;
         }
         
         /* Hide default Streamlit elements */
