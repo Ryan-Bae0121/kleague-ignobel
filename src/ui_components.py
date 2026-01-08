@@ -13,6 +13,21 @@ def inject_custom_css():
             background-color: #0e1117;
         }
         
+        /* Sidebar: Always keep expanded */
+        [data-testid="stSidebar"] {
+            position: fixed !important;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            visibility: visible !important;
+            margin-left: 0 !important;
+        }
+        
+        [data-testid="stMainContainer"] {
+            margin-left: 300px;
+        }
+        
         /* Hide default Streamlit elements */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
