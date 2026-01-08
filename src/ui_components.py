@@ -4,19 +4,69 @@ Reusable UI components for sports magazine style Streamlit app
 import streamlit as st
 
 
-def inject_custom_css():
-    """Inject custom dark theme CSS"""
+def render_sidebar_toggle():
+    """Render sidebar toggle button and manage sidebar state"""
+    # Initialize sidebar state
+    if 'sidebar_open' not in st.session_state:
+        st.session_state.sidebar_open = True
+    
+    # Add custom CSS for the toggle button
     st.markdown("""
     <style>
-        /* Dark Theme Base */
-        .stApp {
-            background-color: #0e1117;
+        /* Sidebar Toggle Button Styling */
+        button[key="sidebar_toggle"] {
+            background-color: #facc15 !important;
+            color: #0e1117 !important;
+            border: 2px solid #eab308 !important;
+            border-radius: 8px !important;
+            padding: 12px 14px !important;
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 8px rgba(250, 204, 21, 0.3) !important;
+            transition: all 0.2s ease !important;
         }
         
-        /* Force sidebar to always be visible */
-        [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
+        button[key="sidebar_toggle"]:hover {
+            background-color: #eab308 !important;
+            box-shadow: 0 6px 12px rgba(250, 204, 21, 0.5) !important;
+            transform: scale(1.1) !important;
+        }
+        
+        button[key="sidebar_toggle"]:active {
+            transform: scale(0.95) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create sidebar toggle button in columns for better positioning
+    col1, col2, col3 = st.columns([0.3, 0.7, 0.1])
+    with col3:
+        if st.button(
+            "☰" if st.session_state.sidebar_open else "≡",
+            key="sidebar_toggle",
+            help="사이드바 열기/닫기"
+        ):
+            st.session_state.sidebar_open = not st.session_state.sidebar_open
+            st.rerun()
+
+
+def inject_custom_css():
+    """Inject custom dark theme CSS with dynamic sidebar display"""
+    # Determine sidebar display state
+    sidebar_display = "block" if st.session_state.get('sidebar_open', True) else "none"
+    
+    st.markdown(f"""
+    <style>
+        /* Dark Theme Base */
+        .stApp {{
+            background-color: #0e1117;
+        }}
+        
+        /* Force sidebar display state */
+        [data-testid="stSidebar"] {{
+            display: {sidebar_display} !important;
+            visibility: {"visible" if sidebar_display == "block" else "hidden"} !important;
             width: 300px !important;
             position: fixed !important;
             left: 0 !important;
@@ -26,23 +76,26 @@ def inject_custom_css():
             transform: translateX(0) !important;
             margin-left: 0 !important;
             padding-top: 0 !important;
-        }
+            transition: all 0.3s ease !important;
+        }}
         
-        [data-testid="stMainContainer"] {
-            margin-left: 300px !important;
+        [data-testid="stMainContainer"] {{
+            margin-left: {300 if sidebar_display == "block" else 0}px !important;
             padding-left: 0 !important;
-        }
+            transition: margin-left 0.3s ease !important;
+        }}
         
         /* Ensure content area adjusts for sidebar */
-        .stApp > [data-testid="stMainContainer"] {
-            width: calc(100% - 300px) !important;
-            margin-left: 300px !important;
-        }
+        .stApp > [data-testid="stMainContainer"] {{
+            width: calc(100% - {300 if sidebar_display == "block" else 0}px) !important;
+            margin-left: {300 if sidebar_display == "block" else 0}px !important;
+            transition: all 0.3s ease !important;
+        }}
         
         /* Hide default Streamlit elements */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        #MainMenu {{visibility: hidden;}}
+        footer {{visibility: hidden;}}
+        header {{visibility: hidden;}}
         
         /* Typography */
         h1, h2, h3 {

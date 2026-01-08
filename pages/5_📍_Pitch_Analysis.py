@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
 from src.config import AWARDS
-from src.ui_components import inject_custom_css
+from src.ui_components import inject_custom_css, render_sidebar_toggle
 from src.pitch_utils import (
     draw_pitch_plotly, plot_events_scatter, plot_events_heatmap, plot_zone_activity
 )
@@ -27,6 +27,9 @@ st.set_page_config(
 
 # Inject CSS
 inject_custom_css()
+
+# Render sidebar toggle
+render_sidebar_toggle()
 
 st.title("📍 Pitch Analysis")
 

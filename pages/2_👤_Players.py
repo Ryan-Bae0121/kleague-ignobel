@@ -13,7 +13,7 @@ from src.config import AWARDS
 from src.ui_components import (
     inject_custom_css, render_profile_header, render_award_card, 
     render_stat_card, render_small_award_card, render_player_vs_header,
-    render_metric_comparison
+    render_metric_comparison, render_sidebar_toggle
 )
 from src.text_templates import generate_player_description
 
@@ -34,6 +34,9 @@ st.set_page_config(
 
 # Inject CSS
 inject_custom_css()
+
+# Render sidebar toggle
+render_sidebar_toggle()
 
 st.title("👤 Players")
 

@@ -3,7 +3,7 @@ Methodology Page - Explain awards and methodology (Clean Minimal Style)
 """
 import streamlit as st
 from src.config import AWARDS
-from src.ui_components import inject_custom_css
+from src.ui_components import inject_custom_css, render_sidebar_toggle
 
 st.set_page_config(
     page_title="Methodology",
@@ -14,6 +14,9 @@ st.set_page_config(
 
 # Inject CSS
 inject_custom_css()
+
+# Render sidebar toggle
+render_sidebar_toggle()
 
 st.title("📊 Methodology")
 

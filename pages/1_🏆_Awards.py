@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.io import load_artifact
 from src.config import AWARDS
 from src.viz import plot_award_distribution
-from src.ui_components import inject_custom_css, render_award_card, render_small_award_card
+from src.ui_components import inject_custom_css, render_award_card, render_small_award_card, render_sidebar_toggle
 
 st.set_page_config(
     page_title="Awards",
@@ -22,6 +22,9 @@ st.set_page_config(
 
 # Inject CSS
 inject_custom_css()
+
+# Render sidebar toggle
+render_sidebar_toggle()
 
 st.title("🏆 Awards")
 

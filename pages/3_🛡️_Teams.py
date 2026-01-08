@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
 from src.config import AWARDS
-from src.ui_components import inject_custom_css, render_comparison_card, render_stat_card
+from src.ui_components import inject_custom_css, render_comparison_card, render_stat_card, render_sidebar_toggle
 
 # Load zone data
 @st.cache_data

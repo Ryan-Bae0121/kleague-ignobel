@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.io import load_artifact
 from src.config import AWARDS
 from src.ui_components import (
-    inject_custom_css, render_hero_section, render_award_card
+    inject_custom_css, render_hero_section, render_award_card, render_sidebar_toggle
 )
 
 # Page config
@@ -26,6 +26,9 @@ st.set_page_config(
 
 # Inject custom CSS
 inject_custom_css()
+
+# Render sidebar toggle button
+render_sidebar_toggle()
 
 
 @st.cache_data
