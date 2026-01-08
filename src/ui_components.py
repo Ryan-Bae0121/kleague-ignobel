@@ -28,34 +28,10 @@ def inject_custom_css():
             margin-left: 300px;
         }
         
-        /* Sidebar Toggle Button */
-        .sidebar-toggle-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 200;
-            background: #facc15;
-            color: #0e1117;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
-            font-weight: 700;
-            display: none;
-        }
-        
-        .sidebar-toggle-btn:hover {
-            background: #eab308;
-            transform: scale(1.1);
-        }
-        
-        /* Show toggle when sidebar is hidden */
-        [data-testid="stSidebar"][aria-hidden="true"] ~ [data-testid="stMainContainer"] .sidebar-toggle-btn,
-        body.sidebar-hidden .sidebar-toggle-btn {
-            display: block;
+        /* Sidebar styling - keep visible */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
         }
         
         /* Hide default Streamlit elements */
@@ -353,57 +329,6 @@ def inject_custom_css():
             font-weight: 700;
         }
     </style>
-    
-    <script>
-        // Sidebar Toggle Button
-        function setupSidebarToggle() {
-            const sidebar = document.querySelector('[data-testid="stSidebar"]');
-            let toggleBtn = document.querySelector('.sidebar-toggle-btn');
-            
-            if (!toggleBtn) {
-                toggleBtn = document.createElement('button');
-                toggleBtn.className = 'sidebar-toggle-btn';
-                toggleBtn.innerHTML = '☰';
-                toggleBtn.title = '사이드바 열기';
-                toggleBtn.onclick = (e) => {
-                    e.preventDefault();
-                    if (sidebar) {
-                        sidebar.style.display = sidebar.style.display === 'none' ? 'block' : 'none';
-                        document.body.classList.toggle('sidebar-hidden');
-                    }
-                };
-                document.body.insertBefore(toggleBtn, document.body.firstChild);
-            }
-            
-            // Monitor sidebar visibility
-            if (sidebar) {
-                const observer = new MutationObserver(() => {
-                    const isHidden = sidebar.style.display === 'none' || !sidebar.offsetParent;
-                    if (isHidden) {
-                        toggleBtn.style.display = 'block';
-                    } else {
-                        toggleBtn.style.display = 'none';
-                    }
-                });
-                
-                observer.observe(sidebar, {
-                    attributes: true,
-                    attributeFilter: ['style'],
-                    subtree: false
-                });
-            }
-        }
-        
-        // Initialize on page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupSidebarToggle);
-        } else {
-            setupSidebarToggle();
-        }
-        
-        // Reinitialize on Streamlit reruns
-        window.addEventListener('load', setupSidebarToggle);
-    </script>
     """, unsafe_allow_html=True)
 
 
