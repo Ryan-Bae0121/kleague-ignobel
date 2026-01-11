@@ -13,11 +13,11 @@ build/
 .vscode/
 *.log
 
-# Images (keep structure but ignore large files)
-images/logos/*.png
-images/logos/*.jpg
-images/players/*.png
-images/players/*.jpg
+# Images - now tracked in Git for Streamlit Cloud deployment
+# images/logos/*.png
+# images/logos/*.jpg
+# images/players/*.png
+# images/players/*.jpg
 !images/.gitkeep
 !images/logos/.gitkeep
 !images/players/.gitkeep
