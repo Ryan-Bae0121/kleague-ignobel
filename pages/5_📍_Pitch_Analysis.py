@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
 from src.config import AWARDS
-from src.ui_components import inject_custom_css, render_sidebar_toggle
+from src.ui_components import inject_custom_css, get_team_logo_html
 from src.pitch_utils import (
     draw_pitch_plotly, plot_events_scatter, plot_events_heatmap, plot_zone_activity
 )
@@ -28,8 +28,6 @@ st.set_page_config(
 # Inject CSS
 inject_custom_css()
 
-# Render sidebar toggle
-render_sidebar_toggle()
 
 st.title("📍 Pitch Analysis")
 
@@ -64,9 +62,17 @@ with tab1:
     col_filter, col_plot = st.columns([1, 3])
     
     with col_filter:
-        # Team selection
+        # Team selection with logo display helper
         teams = sorted(events_light["team_name_ko"].unique().tolist())
+        
+        # Create display names with logos (for reference, selectbox doesn't support HTML)
         selected_team = st.selectbox("팀 선택", teams, key="team_pitch")
+        
+        # Show selected team logo below selectbox
+        if selected_team:
+            team_logo_html = get_team_logo_html(selected_team, size=50)
+            if team_logo_html:
+                st.markdown(f'<div style="text-align: center; margin-top: 10px;">{team_logo_html}</div>', unsafe_allow_html=True)
         
         # Event type selection
         event_types = ["All", "Pass", "Shot", "Shot_Freekick", "Cross", "Duel", 
@@ -112,8 +118,10 @@ with tab1:
                     show_zones=show_zones
                 )
             
+            team_logo_html = get_team_logo_html(selected_team, size=30)
+            team_display = f"{team_logo_html} {selected_team}" if team_logo_html else selected_team
             fig.update_layout(
-                title=f"{selected_team} - {selected_event if selected_event != 'All' else '모든 이벤트'}"
+                title=f"{team_display} - {selected_event if selected_event != 'All' else '모든 이벤트'}"
             )
             
             st.plotly_chart(fig, use_container_width=True)
@@ -193,8 +201,10 @@ with tab2:
                 )
             
             player_team = player_events["team_name_ko"].iloc[0] if len(player_events) > 0 else ""
+            team_logo_html = get_team_logo_html(player_team, size=30) if player_team else ""
+            team_display = f"{team_logo_html} {player_team}" if team_logo_html else player_team
             fig.update_layout(
-                title=f"{selected_player} ({player_team}) - {selected_event if selected_event != 'All' else '모든 이벤트'}"
+                title=f"{selected_player} ({team_display}) - {selected_event if selected_event != 'All' else '모든 이벤트'}"
             )
             
             st.plotly_chart(fig, use_container_width=True)
@@ -315,11 +325,15 @@ with tab3:
                 for idx, (_, winner) in enumerate(award_winners.iterrows()):
                     with winner_cols[idx]:
                         rank_emoji = "🥇" if winner["rank"] == 1 else "🥈" if winner["rank"] == 2 else "🥉" if winner["rank"] == 3 else f"#{int(winner['rank'])}"
+                        winner_team_logo = get_team_logo_html(winner['team_name_ko'], size=25)
                         winner_html = f"""
                         <div class="award-card" style="padding: 16px; text-align: center;">
                             <div style="font-size: 1.5rem; margin-bottom: 8px;">{rank_emoji}</div>
                             <div class="award-player" style="font-size: 1rem;">{winner['player_name_ko']}</div>
-                            <div class="award-team" style="font-size: 0.85rem;">{winner['team_name_ko']}</div>
+                            <div class="award-team" style="font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                {winner_team_logo}
+                                <span>{winner['team_name_ko']}</span>
+                            </div>
                             <div class="award-subtext" style="margin-top: 8px;">점수: {winner['score']:.3f}</div>
                         </div>
                         """

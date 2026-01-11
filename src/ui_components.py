@@ -2,6 +2,65 @@
 Reusable UI components for sports magazine style Streamlit app
 """
 import streamlit as st
+from pathlib import Path
+import base64
+
+try:
+    from src.image_utils import render_team_logo, render_player_photo, get_team_logo_url
+    HAS_IMAGE_UTILS = True
+except ImportError:
+    HAS_IMAGE_UTILS = False
+    get_team_logo_url = None
+
+
+def get_team_logo_html(team_name: str, size: int = 40) -> str:
+    """
+    Get team logo as HTML img tag with base64 encoding
+    Returns empty string if logo not found
+    """
+    if not HAS_IMAGE_UTILS or not get_team_logo_url:
+        return ""
+    
+    try:
+        logo_path = get_team_logo_url(team_name)
+        if logo_path:
+            logo_file = Path(logo_path)
+            if logo_file.exists():
+                with open(logo_file, 'rb') as f:
+                    img_data = f.read()
+                    img_base64 = base64.b64encode(img_data).decode('utf-8')
+                    img_ext = logo_file.suffix.lower().replace('.', '')
+                    return f'<img src="data:image/{img_ext};base64,{img_base64}" style="width: {size}px; height: {size}px; object-fit: contain; margin-right: 8px; vertical-align: middle; border-radius: 6px; background: rgba(255,255,255,0.1); padding: 2px;" />'
+    except Exception:
+        pass
+    return ""
+
+
+def render_team_name_with_logo(team_name: str, size: int = 40, style: str = "inline"):
+    """
+    Render team name with logo
+    style: "inline" (텍스트 옆), "block" (위아래), "only" (로고만)
+    """
+    logo_html = get_team_logo_html(team_name, size)
+    
+    if style == "only":
+        if logo_html:
+            return logo_html
+        else:
+            # Placeholder
+            return f'<div style="width: {size}px; height: {size}px; border-radius: 50%; background: linear-gradient(135deg, #30363d 0%, #1c2128 100%); display: inline-block; text-align: center; line-height: {size}px; color: #facc15; font-weight: 700; font-size: {size//3}px; border: 2px solid #facc15;">{team_name[0] if team_name else "?"}</div>'
+    elif style == "block":
+        return f"""
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            {logo_html if logo_html else f'<div style="width: {size}px; height: {size}px; border-radius: 50%; background: linear-gradient(135deg, #30363d 0%, #1c2128 100%); text-align: center; line-height: {size}px; color: #facc15; font-weight: 700; font-size: {size//3}px; border: 2px solid #facc15;">{team_name[0] if team_name else "?"}</div>'}
+            <span>{team_name}</span>
+        </div>
+        """
+    else:  # inline (default)
+        if logo_html:
+            return f'<div style="display: inline-flex; align-items: center;">{logo_html}<span>{team_name}</span></div>'
+        else:
+            return team_name
 
 
 def render_sidebar_toggle():
@@ -61,9 +120,10 @@ def inject_custom_css():
     
     css_content = """
     <style>
-        /* Dark Theme Base */
+        /* Dark Theme Base - Enhanced */
         .stApp {{
-            background-color: #0e1117;
+            background: linear-gradient(135deg, #0a0d14 0%, #0e1117 50%, #161b22 100%);
+            background-attachment: fixed;
         }}
         
         /* Force sidebar display state */
@@ -106,44 +166,195 @@ def inject_custom_css():
             font-weight: 700;
         }}
         
-        /* Card Styles */
+        /* Card Styles - Enhanced */
         .award-card {{
-            background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
-            border: 1px solid #30363d;
-            border-radius: 20px;
-            padding: 24px;
-            margin: 16px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #1a1f28 0%, #242932 50%, #1c2128 100%);
+            border: 2px solid #30363d;
+            border-radius: 24px;
+            padding: 28px;
+            margin: 20px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 
+                        0 2px 4px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .clickable-award-card {{
+            background: linear-gradient(135deg, #1a1f28 0%, #242932 50%, #1c2128 100%);
+            border: 2px solid #30363d;
+            border-radius: 24px;
+            padding: 28px;
+            margin: 20px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 
+                        0 2px 4px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .clickable-award-card:hover {{
+            transform: translateY(-6px) !important;
+            border-color: #facc15 !important;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 
+                        0 4px 8px rgba(250, 204, 21, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        }}
+        
+        .clickable-award-card:hover .award-title {{
+            color: #facc15;
+        }}
+        
+        /* Streamlit 정석: 버튼 완전히 숨기기 (JS + CSS 조합) */
+        /* 컬럼을 relative로 */
+        div[data-testid="column"] {{
+            position: relative !important;
+        }}
+        
+        /* 모든 award/top3 버튼 완전히 숨기기 */
+        button[key*="award_nav_"],
+        button[key*="top3_nav_"] {{
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            width: 0 !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }}
+        
+        /* 버튼 컨테이너도 숨기기 */
+        div[data-testid="column"] .stButton button[key*="award_nav_"],
+        div[data-testid="column"] .stButton button[key*="top3_nav_"],
+        .stButton button[key*="award_nav_"],
+        .stButton button[key*="top3_nav_"] {{
+            display: none !important;
+            visibility: hidden !important;
+        }}
+        
+        /* Clickable wrapper for award cards */
+        .clickable-award-card-wrapper {{
+            position: relative;
+            cursor: pointer;
+        }}
+        
+        .clickable-award-card-wrapper:hover .clickable-award-card {{
+            transform: translateY(-6px) !important;
+            border-color: #facc15 !important;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 
+                        0 4px 8px rgba(250, 204, 21, 0.3) !important;
+        }}
+        
+        .clickable-award-card-wrapper:hover .hover-indicator {{
+            opacity: 1 !important;
+        }}
+        
+        /* Make the button area clickable and overlay it */
+        .clickable-award-card-wrapper button {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            z-index: 10;
+            cursor: pointer;
+        }}
+        
+        .award-card::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #facc15, #eab308, #facc15);
+            opacity: 0;
+            transition: opacity 0.3s;
         }}
         
         .award-card:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 
+                        0 4px 8px rgba(250, 204, 21, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
             border-color: #facc15;
         }}
         
+        .award-card:hover::before {{
+            opacity: 1;
+        }}
+        
         .award-card-large {{
-            background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
-            border: 2px solid #30363d;
-            border-radius: 24px;
-            padding: 32px;
-            margin: 20px 0;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #1a1f28 0%, #242932 50%, #1c2128 100%);
+            border: 3px solid #30363d;
+            border-radius: 28px;
+            padding: 40px;
+            margin: 24px 0;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5), 
+                        0 4px 8px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .award-card-large::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #facc15, #eab308, #facc15);
         }}
         
         .award-title {{
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #facc15;
-            margin-bottom: 12px;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }}
         
         .award-title-large {{
-            font-size: 2rem;
-            font-weight: 700;
-            color: #facc15;
-            margin-bottom: 16px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        
+        /* 이모티콘은 원래 색상 유지 */
+        .award-icon {{
+            -webkit-text-fill-color: initial !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+            display: inline-block;
+            font-style: normal;
+            filter: none !important;
+            flex-shrink: 0;
+        }}
+        
+        /* 텍스트 부분만 그라데이션 */
+        .award-title-text {{
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 50%, #facc15 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 8px rgba(250, 204, 21, 0.3);
+        }}
+        
+        .award-title-large .award-title-text {{
+            text-shadow: 0 4px 12px rgba(250, 204, 21, 0.4);
         }}
         
         .award-player {{
@@ -157,14 +368,21 @@ def inject_custom_css():
             font-size: 1rem;
             color: #8b949e;
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
         }}
         
         .award-metric {{
-            font-size: 3rem;
-            font-weight: 800;
-            color: #facc15;
-            margin: 16px 0;
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 20px 0;
             line-height: 1;
+            text-shadow: 0 4px 16px rgba(250, 204, 21, 0.3);
+            letter-spacing: -2px;
         }}
         
         .award-metric-label {{
@@ -192,8 +410,10 @@ def inject_custom_css():
         }}
         
         .badge-rank-1 {{
-            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 50%, #eab308 100%);
             color: #0e1117;
+            box-shadow: 0 4px 12px rgba(250, 204, 21, 0.4);
+            font-weight: 800;
         }}
         
         .badge-rank-2 {{
@@ -217,21 +437,50 @@ def inject_custom_css():
             border: 1px solid #30363d;
         }}
         
-        /* Hero Section */
+        /* Hero Section - Enhanced */
         .hero-section {{
             text-align: center;
-            padding: 60px 20px 40px;
-            background: linear-gradient(180deg, #0e1117 0%, #161b22 100%);
-            border-bottom: 2px solid #30363d;
-            margin-bottom: 40px;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, #0a0d14 0%, #0e1117 30%, #161b22 100%);
+            border-bottom: 3px solid #30363d;
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .hero-section::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.08) 0%, transparent 70%);
+            pointer-events: none;
         }}
         
         .hero-title {{
-            font-size: 3.5rem;
+            font-size: 4.5rem;
             font-weight: 900;
-            color: #facc15;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 50%, #eab308 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(250, 204, 21, 0.5);
+            letter-spacing: -2px;
+            animation: fadeInDown 0.8s ease-out;
+        }}
+        
+        @keyframes fadeInDown {{
+            from {{
+                opacity: 0;
+                transform: translateY(-20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
         }}
         
         .hero-subtitle {{
@@ -256,12 +505,18 @@ def inject_custom_css():
             font-weight: 800;
             color: #f8f9fa;
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }}
         
         .profile-team {{
             font-size: 1.3rem;
             color: #8b949e;
             margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }}
         
         .profile-summary {{
@@ -283,18 +538,32 @@ def inject_custom_css():
         }}
         
         .stat-card {{
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 16px;
-            padding: 20px;
+            background: linear-gradient(135deg, #1a1f28 0%, #242932 100%);
+            border: 2px solid #30363d;
+            border-radius: 20px;
+            padding: 28px;
             text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }}
+        
+        .stat-card:hover {{
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4),
+                        0 4px 8px rgba(250, 204, 21, 0.15);
+            border-color: #facc15;
         }}
         
         .stat-value {{
-            font-size: 2rem;
-            font-weight: 700;
-            color: #facc15;
-            margin-bottom: 4px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(250, 204, 21, 0.3);
         }}
         
         .stat-label {{
@@ -352,14 +621,47 @@ def inject_custom_css():
             line-height: 1.6;
         }}
         
-        /* Section Title */
+        /* Section Title - Enhanced */
         .section-title {{
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.5rem;
+            font-weight: 800;
             color: #f8f9fa;
-            margin: 40px 0 24px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #30363d;
+            margin: 50px 0 32px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #30363d;
+            position: relative;
+            letter-spacing: -1px;
+        }}
+        
+        /* 이모티콘은 원래 색상 유지 */
+        .section-emoji {{
+            -webkit-text-fill-color: initial !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+            display: inline-block;
+            margin-right: 8px;
+            font-style: normal;
+            filter: none !important;
+        }}
+        
+        /* 텍스트 부분만 그라데이션 */
+        .section-text {{
+            background: linear-gradient(135deg, #f8f9fa 0%, #c9d1d9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline;
+        }}
+        
+        .section-title::after {{
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #facc15, transparent);
         }}
         
         /* Formula Box */
@@ -403,8 +705,9 @@ def inject_custom_css():
 def render_award_card(award_icon: str, award_title: str, player_name: str, 
                      team_name: str, metric_value: float, metric_label: str,
                      rank: int, percentile: float = None, description: str = None,
-                     is_large: bool = False):
-    """Render a single award card"""
+                     is_large: bool = False, show_images: bool = True,
+                     extra_info: str = ""):
+    """Render a single award card with optional images"""
     rank_emoji = "🥇" if rank == 1 else "🥈" if rank == 2 else "🥉" if rank == 3 else f"#{rank}"
     rank_class = "badge-rank-1" if rank == 1 else "badge-rank-2" if rank == 2 else "badge-rank-3" if rank == 3 else "badge-rank"
     
@@ -419,56 +722,100 @@ def render_award_card(award_icon: str, award_title: str, player_name: str,
     if description:
         description_html = f'<div class="award-subtext">{description}</div>'
     
-    html = f"""
-    <div class="{card_class}">
-        <div class="{title_class}">
-            {award_icon} {award_title}
-        </div>
-        <div class="award-player">{player_name}</div>
-        <div class="award-team">{team_name}</div>
-        <div class="award-metric">{metric_value:.3f}</div>
-        <div class="award-metric-label">{metric_label}</div>
-        <div style="margin-top: 16px;">
-            <span class="badge {rank_class}">{rank_emoji}</span>
-            {percentile_html}
-        </div>
-        {description_html}
-    </div>
-    """
-    return html
+    # Get team logo HTML
+    logo_html = get_team_logo_html(team_name, size=50 if is_large else 40) if show_images else ""
+    
+    # Ensure extra_info is properly formatted - only include if not empty
+    if extra_info and extra_info.strip():
+        extra_info_html = extra_info
+    else:
+        extra_info_html = ""
+    
+    html_parts = [
+        f'<div class="{card_class}">',
+        f'    <div class="{title_class}">',
+        f'        <span class="award-icon">{award_icon}</span> <span class="award-title-text">{award_title}</span>',
+        '    </div>',
+        f'    <div class="award-player">{player_name}</div>',
+        '    <div class="award-team">',
+        f'        {logo_html}',
+        f'        <span>{team_name}</span>',
+        '    </div>',
+    ]
+    
+    # Add extra_info before metric if it exists
+    if extra_info_html:
+        html_parts.append(extra_info_html)
+    
+    html_parts.extend([
+        f'    <div class="award-metric">{metric_value:.3f}</div>',
+        f'    <div class="award-metric-label">{metric_label}</div>',
+        '    <div style="margin-top: 16px;">',
+        f'        <span class="badge {rank_class}">{rank_emoji}</span>',
+        f'        {percentile_html}',
+        '    </div>',
+        description_html,
+        '</div>'
+    ])
+    
+    return '\n'.join(html_parts)
 
 
 def render_small_award_card(award_icon: str, award_title: str, player_name: str,
-                           team_name: str, rank: int, score: float):
+                           team_name: str, rank: int, score: float, show_logo: bool = True,
+                           extra_info: str = ""):
     """Render a compact award card for lists"""
     rank_emoji = "🥇" if rank == 1 else "🥈" if rank == 2 else "🥉" if rank == 3 else f"#{rank}"
     
-    html = f"""
-    <div class="award-card" style="padding: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-                <div style="font-size: 1.1rem; color: #facc15; font-weight: 600; margin-bottom: 4px;">
-                    {award_icon} {award_title}
-                </div>
-                <div style="font-size: 1rem; color: #f8f9fa; font-weight: 500;">
-                    {player_name}
-                </div>
-                <div style="font-size: 0.85rem; color: #8b949e; margin-top: 4px;">
-                    {team_name}
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <div class="badge badge-rank" style="font-size: 1.1rem; padding: 8px 16px;">
-                    {rank_emoji}
-                </div>
-                <div style="font-size: 1.2rem; color: #facc15; font-weight: 700; margin-top: 8px;">
-                    {score:.3f}
-                </div>
-            </div>
-        </div>
-    </div>
-    """
-    return html
+    # Get team logo HTML
+    logo_html = get_team_logo_html(team_name, size=30) if show_logo else ""
+    
+    # Safely format score
+    try:
+        score_str = f"{float(score):.3f}"
+    except (ValueError, TypeError):
+        score_str = str(score)
+    
+    # Ensure extra_info is properly formatted - only include if not empty
+    if extra_info and extra_info.strip():
+        extra_info_html = extra_info
+    else:
+        extra_info_html = ""
+    
+    # Build HTML string - conditionally include extra_info
+    html_parts = [
+        '<div class="award-card" style="padding: 16px;">',
+        '    <div style="display: flex; justify-content: space-between; align-items: start;">',
+        '        <div style="flex: 1;">',
+        '            <div style="font-size: 1.1rem; color: #facc15; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">',
+        f'                <span style="-webkit-text-fill-color: initial !important; background: none !important;">{award_icon}</span> <span>{award_title}</span>',
+        '            </div>',
+        f'            <div style="font-size: 1rem; color: #f8f9fa; font-weight: 500;">{player_name}</div>',
+        '            <div style="font-size: 0.85rem; color: #8b949e; margin-top: 4px; display: flex; align-items: center;">',
+        f'                {logo_html}',
+        f'                <span>{team_name}</span>',
+        '            </div>',
+    ]
+    
+    # Add extra_info only if it exists
+    if extra_info_html:
+        html_parts.append(extra_info_html)
+    
+    html_parts.extend([
+        '        </div>',
+        '        <div style="text-align: right;">',
+        '            <div class="badge badge-rank" style="font-size: 1.1rem; padding: 8px 16px;">',
+        f'                {rank_emoji}',
+        '            </div>',
+        '            <div style="font-size: 1.2rem; color: #facc15; font-weight: 700; margin-top: 8px;">',
+        f'                {score_str}',
+        '            </div>',
+        '        </div>',
+        '    </div>',
+        '</div>'
+    ])
+    
+    return '\n'.join(html_parts)
 
 
 def render_hero_section(title: str, subtitle: str):
@@ -483,11 +830,18 @@ def render_hero_section(title: str, subtitle: str):
 
 
 def render_profile_header(player_name: str, team_name: str, summary: str):
-    """Render player profile header"""
+    """Render player profile header with team logo"""
+    logo_html = get_team_logo_html(team_name, size=60)
+    
     html = f"""
     <div class="profile-header">
-        <div class="profile-name">{player_name}</div>
-        <div class="profile-team">{team_name}</div>
+        <div class="profile-name">
+            {logo_html}
+            <span>{player_name}</span>
+        </div>
+        <div class="profile-team">
+            {team_name}
+        </div>
         <div class="profile-summary">{summary}</div>
     </div>
     """
@@ -528,15 +882,21 @@ def render_comparison_card(label: str, team_value: float, league_value: float, u
 
 def render_player_vs_header(player1_name: str, player1_team: str, 
                             player2_name: str, player2_team: str):
-    """Render player vs player header card"""
+    """Render player vs player header card with team logos"""
+    logo1_html = get_team_logo_html(player1_team, size=50) if player1_team else ""
+    logo2_html = get_team_logo_html(player2_team, size=50) if player2_team else ""
+    
     html = f"""
     <div class="award-card-large" style="text-align: center; padding: 40px;">
         <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px;">
             <div>
-                <div class="award-player" style="font-size: 1.5rem; margin-bottom: 8px;">
-                    {player1_name}
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+                    {logo1_html}
+                    <div class="award-player" style="font-size: 1.5rem; margin: 0;">
+                        {player1_name}
+                    </div>
                 </div>
-                <div class="award-team" style="font-size: 1rem;">
+                <div class="award-team" style="font-size: 1rem; justify-content: center;">
                     {player1_team if player1_team else ""}
                 </div>
             </div>
@@ -544,10 +904,13 @@ def render_player_vs_header(player1_name: str, player1_team: str,
                 ⚔️
             </div>
             <div>
-                <div class="award-player" style="font-size: 1.5rem; margin-bottom: 8px;">
-                    {player2_name}
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+                    {logo2_html}
+                    <div class="award-player" style="font-size: 1.5rem; margin: 0;">
+                        {player2_name}
+                    </div>
                 </div>
-                <div class="award-team" style="font-size: 1rem;">
+                <div class="award-team" style="font-size: 1rem; justify-content: center;">
                     {player2_team if player2_team else ""}
                 </div>
             </div>
@@ -583,7 +946,7 @@ def render_metric_comparison(award_title: str, award_icon: str,
     html = f"""
     <div class="award-card" style="margin-bottom: 20px;">
         <div class="award-title" style="margin-bottom: 20px; text-align: center;">
-            {award_icon} {award_title}
+            <span class="award-icon">{award_icon}</span> <span class="award-title-text">{award_title}</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center;">
             <div style="text-align: center;">
@@ -617,4 +980,3 @@ def render_metric_comparison(award_title: str, award_icon: str,
     </div>
     """
     return html
-

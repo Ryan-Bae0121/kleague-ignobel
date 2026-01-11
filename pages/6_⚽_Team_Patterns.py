@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
-from src.ui_components import inject_custom_css, render_sidebar_toggle
+from src.ui_components import inject_custom_css, get_team_logo_html
 import plotly.graph_objects as go
 import plotly.express as px
 
@@ -25,8 +25,6 @@ st.set_page_config(
 # Inject CSS
 inject_custom_css()
 
-# Render sidebar toggle
-render_sidebar_toggle()
 
 st.title("⚽ Team Patterns")
 
@@ -67,6 +65,13 @@ with col_filter:
     teams = sorted(team_zone["team_name_ko"].unique().tolist())
     selected_team = st.selectbox("팀 선택", teams, key="pattern_team")
     
+    # Show selected team logo below selectbox
+    if selected_team:
+        team_logo_html = get_team_logo_html(selected_team, size=60)
+        if team_logo_html:
+            st.markdown(f'<div style="text-align: center; margin-top: 15px; margin-bottom: 10px;">{team_logo_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align: center; color: #facc15; font-weight: 600; font-size: 1.1rem;">{selected_team}</div>', unsafe_allow_html=True)
+    
     # Event type
     selected_event = st.selectbox("이벤트 타입", ["All"] + EVENT_TYPES, key="pattern_event")
     
@@ -106,13 +111,26 @@ with col_main:
         team_data["success_rate"] = team_data["success_rate"].fillna(0)
         team_data["event_type"] = "All"
         
-        # For league data
-        league_data_total = league_avg.groupby("zone")["league_count"].sum().reset_index()
+        # For league data - 팀당 평균 사용
+        if "avg_events_per_team" in league_avg.columns:
+            # 팀당 평균이 있으면 그것을 사용
+            league_data_total = league_avg.groupby("zone")["avg_events_per_team"].sum().reset_index()
+            league_data_total.columns = ["zone", "avg_events_per_team"]
+        else:
+            # 팀당 평균이 없으면 전체 합계를 팀 수로 나누어 평균 계산
+            num_teams = team_zone["team_name_ko"].nunique()
+            if num_teams > 0:
+                league_data_total = league_avg.groupby("zone")["league_count"].sum().reset_index()
+                league_data_total["avg_events_per_team"] = league_data_total["league_count"] / num_teams
+                league_data_total = league_data_total[["zone", "avg_events_per_team"]]
+            else:
+                league_data_total = pd.DataFrame(columns=["zone", "avg_events_per_team"])
         
         league_success_list = []
         for zone in league_avg["zone"].unique():
             zone_data = league_avg[league_avg["zone"] == zone]
-            weights = zone_data["league_count"].values
+            # 팀당 평균을 가중치로 사용 (없으면 전체 합계 사용)
+            weights = zone_data["avg_events_per_team"].values if "avg_events_per_team" in zone_data.columns else zone_data["league_count"].values
             values = zone_data["league_success_rate"].values
             if len(weights) > 0 and weights.sum() > 0:
                 weighted_avg = np.average(values, weights=weights)
@@ -128,7 +146,8 @@ with col_main:
     # Prepare data for heatmap
     if metric_type == "이벤트 수 (빈도)":
         metric_col = "event_count"
-        league_metric_col = "league_count"
+        # 리그 평균은 팀당 평균을 사용 (전체 합계가 아닌)
+        league_metric_col = "avg_events_per_team" if "avg_events_per_team" in league_data.columns else "league_count"
         title_suffix = "이벤트 수"
     else:
         metric_col = "success_rate"
@@ -143,6 +162,10 @@ with col_main:
         
         team_val = team_val[0] if len(team_val) > 0 else 0
         league_val = league_val[0] if len(league_val) > 0 else 0
+        
+        # 리그 평균이 없으면 0으로 처리 (데이터가 없는 경우)
+        if league_val == 0 or pd.isna(league_val):
+            league_val = team_val if team_val > 0 else 0  # 팀 값이 있으면 그것을 사용 (임시)
         
         diff = team_val - league_val if league_val > 0 else 0
         diff_pct = (diff / league_val * 100) if league_val > 0 else 0
@@ -176,6 +199,7 @@ with col_main:
                       f"{title_suffix}: %{{z:.2f}}<extra></extra>"
     ))
     
+    # Plotly title에는 HTML을 넣을 수 없으므로 텍스트만 사용
     fig.update_layout(
         title=f"{selected_team} - Zone별 {title_suffix}",
         xaxis_title="Zone",
@@ -211,6 +235,7 @@ with col_main:
         textposition="outside"
     ))
     
+    # Plotly title에는 HTML을 넣을 수 없으므로 텍스트만 사용
     fig2.update_layout(
         title=f"{selected_team} vs 리그 평균 - Zone별 {title_suffix}",
         xaxis_title="Zone",

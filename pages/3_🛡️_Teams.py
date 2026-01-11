@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
 from src.config import AWARDS
-from src.ui_components import inject_custom_css, render_comparison_card, render_stat_card, render_sidebar_toggle
+from src.ui_components import inject_custom_css, render_comparison_card, render_stat_card, get_team_logo_html
 
 # Load zone data
 @st.cache_data
@@ -51,6 +51,13 @@ with col_sidebar:
     st.markdown("### 팀 선택")
     teams = sorted(leaderboard["team_name_ko"].unique().tolist())
     selected_team = st.selectbox("팀", teams, key="team_select")
+    
+    # Show selected team logo below selectbox
+    if selected_team:
+        team_logo_html = get_team_logo_html(selected_team, size=80)
+        if team_logo_html:
+            st.markdown(f'<div style="text-align: center; margin-top: 20px; margin-bottom: 15px;">{team_logo_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align: center; color: #facc15; font-weight: 700; font-size: 1.2rem;">{selected_team}</div>', unsafe_allow_html=True)
 
 # Filter team data
 team_players = leaderboard[leaderboard["team_name_ko"] == selected_team].copy()
@@ -60,10 +67,14 @@ if len(team_players) == 0:
     st.stop()
 
 with col_main:
-    # Team Header
+    # Team Header with logo
+    team_logo_html = get_team_logo_html(selected_team, size=70)
     team_header_html = f"""
     <div class="profile-header">
-        <div class="profile-name">{selected_team}</div>
+        <div class="profile-name">
+            {team_logo_html}
+            <span>{selected_team}</span>
+        </div>
         <div class="profile-summary" style="font-size: 1rem;">
             이번 시즌 {selected_team}의 이그노벨상 수상 현황과 리그 평균 대비 분석입니다.
         </div>
@@ -178,16 +189,21 @@ with col_main:
                         player_row = top_players.iloc[idx]
                         award_info = next((a for a in AWARDS if a["id"] == player_row["award_id"]), None)
                         award_title = award_info["title"] if award_info else "상"
+                        player_team_logo = get_team_logo_html(player_row["team_name_ko"], size=25)
                         
                         card_html = f"""
                         <div class="award-card" style="padding: 16px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
+                                <div style="flex: 1;">
                                     <div style="font-size: 0.9rem; color: #8b949e; margin-bottom: 4px;">
                                         {award_title}
                                     </div>
                                     <div style="font-size: 1.1rem; color: #f8f9fa; font-weight: 600;">
                                         {player_row["player_name_ko"]}
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: #8b949e; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                        {player_team_logo}
+                                        <span>{player_row["team_name_ko"]}</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right;">

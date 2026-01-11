@@ -13,7 +13,7 @@ from src.config import AWARDS
 from src.ui_components import (
     inject_custom_css, render_profile_header, render_award_card, 
     render_stat_card, render_small_award_card, render_player_vs_header,
-    render_metric_comparison, render_sidebar_toggle
+    render_metric_comparison, get_team_logo_html
 )
 from src.text_templates import generate_player_description
 
@@ -35,8 +35,6 @@ st.set_page_config(
 # Inject CSS
 inject_custom_css()
 
-# Render sidebar toggle
-render_sidebar_toggle()
 
 st.title("👤 Players")
 
@@ -117,6 +115,7 @@ with tab_profile:
         st.warning("검색 결과가 없습니다.")
     else:
         # Player selection
+        # Show players with team names
         player_names = (filtered_players["player_name_ko"] + " (" + filtered_players["team_name_ko"] + ")").tolist()
         selected_player_idx = st.selectbox("선수 선택", range(len(player_names)), 
                                           format_func=lambda x: player_names[x],

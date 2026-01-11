@@ -9,7 +9,7 @@ import pandas as pd
 _PROJECT_ROOT = Path(__file__).parent.parent
 
 # Data paths - adjust relative to open_track2 directory
-_OPEN_TRACK2_ROOT = _PROJECT_ROOT.parent / "open_track2"
+_OPEN_TRACK2_ROOT = _PROJECT_ROOT / "open_track2"
 RAW_DATA_PATH = _OPEN_TRACK2_ROOT / "raw_data.csv"
 MATCH_INFO_PATH = _OPEN_TRACK2_ROOT / "match_info.csv"
 

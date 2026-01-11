@@ -169,16 +169,39 @@ def compute_award_scores(stats: pd.DataFrame, award_configs: list = None) -> pd.
             continue
         
         # Calculate percentile
-        scores = filtered[metric].fillna(0)
-        percentile_rank = scores.rank(pct=True) * 100
+        scores = filtered[metric].fillna(0).copy()
+        original_scores = scores.copy()  # Keep original scores for display
+        
+        # Special handling for fail_rate metrics: if score is 0, rank by attempt count (higher attempts = higher rank)
+        ranking_scores = scores.copy()
+        if metric in ["interception_fail_rate", "block_fail_rate"] and attempt_col and attempt_col in filtered.columns:
+            # For players with fail_rate = 0 ONLY, add a small bonus based on attempt count (normalized)
+            # This ensures that among zero-fail players, those with more attempts rank higher
+            attempt_counts = filtered[attempt_col].fillna(0)
+            max_attempts = attempt_counts.max()
+            
+            if max_attempts > 0:
+                # Only add bonus to players with score = 0
+                zero_score_mask = (scores == 0.0)
+                if zero_score_mask.any():
+                    # Normalize attempts to a small value (0.001 ~ 0.0001 range)
+                    # Add this only for ranking, not for display score
+                    attempt_bonus = (attempt_counts / max_attempts) * 0.0001
+                    # Only apply bonus to zero-score players
+                    ranking_scores = scores.copy()
+                    ranking_scores[zero_score_mask] = scores[zero_score_mask] + attempt_bonus[zero_score_mask]
+                else:
+                    ranking_scores = scores.copy()
+        
+        percentile_rank = ranking_scores.rank(pct=True) * 100
         
         award_scores = pd.DataFrame({
             "award_id": award_id,
             "player_id": filtered["player_id"],
             "player_name_ko": filtered["player_name_ko"],
             "team_name_ko": filtered["team_name_ko"],
-            "score": scores.values,
-            "rank": scores.rank(ascending=False, method="min").astype(int),
+            "score": original_scores.values,  # Display original score
+            "rank": ranking_scores.rank(ascending=False, method="min").astype(int),  # Use ranking_score for rank
             "percentile": percentile_rank.values
         })
         

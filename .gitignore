@@ -13,11 +13,16 @@ build/
 .vscode/
 *.log
 
-# Keep artifacts for deployment (they're small enough)
-# artifacts/*.parquet
-# !artifacts/.gitkeep
+# Images (keep structure but ignore large files)
+images/logos/*.png
+images/logos/*.jpg
+images/players/*.png
+images/players/*.jpg
+!images/.gitkeep
+!images/logos/.gitkeep
+!images/players/.gitkeep
 
-# Ignore data files (not needed for deployment)
+# Data files
 data/
 *.csv
 *.xlsx
@@ -26,5 +31,3 @@ data/
 # OS files
 .DS_Store
 Thumbs.db
-
-

@@ -59,7 +59,7 @@ AWARDS = [
         "metric": "block_fail_rate",
         "direction": "high",
         "icon": "🛡️",
-        "description": "블록을 많이 시도하지만 실패율이 높은 선수",
+        "description": "블록을 많이 시도하지만 실패율이 높은 선수. 실패율이 동일한 선수는 시도 횟수가 많은 순으로 순위가 나열됩니다.",
         "formula": "block_fail_rate = block_fail / block_attempt",
         "min_attempts": 3
     },
@@ -71,7 +71,7 @@ AWARDS = [
         "metric": "interception_fail_rate",
         "direction": "high",
         "icon": "🎯",
-        "description": "인터셉트를 많이 시도하지만 실패율이 높은 선수",
+        "description": "인터셉트를 많이 시도하지만 실패율이 높은 선수. 실패율이 동일한 선수는 시도 횟수가 많은 순으로 순위가 나열됩니다.",
         "formula": "interception_fail_rate = interception_fail / interception_attempt",
         "min_attempts": 5
     },
@@ -192,8 +192,8 @@ AWARDS = [
         "metric": "aerial_fail_per_game",
         "direction": "high",
         "icon": "📏",
-        "description": "공중볼 경합 실패가 많은 선수",
-        "formula": "aerial_fail_per_game = aerial_fail / games",
+        "description": "공격 지역(상대 박스 근처)에서의 헤딩 실패가 많은 선수",
+        "formula": "aerial_fail_per_game = heading_fail / games (공격 지역 start_x >= 85에서의 Duel 실패)",
         "min_attempts": 1
     }
 ]

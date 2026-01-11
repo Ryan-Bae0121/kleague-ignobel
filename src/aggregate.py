@@ -59,20 +59,117 @@ def aggregate_player_stats(df: pd.DataFrame) -> pd.DataFrame:
         results.append(clearance_stats)
     
     # Block stats
+    # Note: Block result_name is often NaN, so we need special handling
+    # Calculate block failures by checking if opponent shot or attacked within 3 seconds after block
     block = df[df["type_name"] == "Block"].copy()
     if len(block) > 0:
+        # Use a list to track which action_ids are failures
+        block_fail_action_ids = set()
+        
+        # For each game, check block failures
+        for (game_id, period_id), game_df in df.groupby(["game_id", "period_id"]):
+            game_blocks = block[
+                (block["game_id"] == game_id) & 
+                (block["period_id"] == period_id)
+            ].copy()
+            
+            if len(game_blocks) == 0:
+                continue
+            
+            # Get all events in this game/period, sorted by time
+            game_events = game_df.sort_values("time_seconds").reset_index(drop=True)
+            
+            for idx, block_row in game_blocks.iterrows():
+                block_time = block_row["time_seconds"]
+                block_team = block_row["team_id"]
+                block_action_id = block_row["action_id"]
+                
+                # Find next events within 3 seconds after block
+                next_events = game_events[
+                    (game_events["time_seconds"] > block_time) &
+                    (game_events["time_seconds"] <= block_time + 3)
+                ]
+                
+                if len(next_events) == 0:
+                    continue
+                
+                # Check if opponent shot or attacked (Shot, Shot_Freekick, or Pass Received in dangerous area)
+                opponent_attacked = next_events[
+                    (next_events["team_id"] != block_team) &
+                    (
+                        (next_events["type_name"].isin(["Shot", "Shot_Freekick"])) |
+                        ((next_events["type_name"] == "Pass Received") & (next_events["start_x"] >= 85))
+                    )
+                ]
+                
+                # If opponent attacked quickly after block, mark as fail
+                if len(opponent_attacked) > 0:
+                    block_fail_action_ids.add(block_action_id)
+        
+        # Mark failures in the block DataFrame
+        block["block_fail_flag"] = block["action_id"].isin(block_fail_action_ids)
+        
         block_stats = block.groupby(["player_id", "player_name_ko", "team_name_ko"]).agg(
             block_attempt=("action_id", "count"),
-            block_fail=("is_fail", "sum"),
+            block_fail=("block_fail_flag", "sum"),
         ).reset_index()
         results.append(block_stats)
     
     # Interception stats
+    # Note: Interception result_name is often NaN, so we need special handling
+    # Calculate interception failures by checking if opponent regained possession within 3 seconds
     interception = df[df["type_name"] == "Interception"].copy()
     if len(interception) > 0:
+        # Use a set to track which action_ids are failures
+        interception_fail_action_ids = set()
+        
+        # For each game, check interception failures
+        for (game_id, period_id), game_df in df.groupby(["game_id", "period_id"]):
+            game_interceptions = interception[
+                (interception["game_id"] == game_id) & 
+                (interception["period_id"] == period_id)
+            ].copy()
+            
+            if len(game_interceptions) == 0:
+                continue
+            
+            # Get all events in this game/period, sorted by time
+            game_events = game_df.sort_values("time_seconds").reset_index(drop=True)
+            
+            for idx, inter_row in game_interceptions.iterrows():
+                inter_time = inter_row["time_seconds"]
+                inter_team = inter_row["team_id"]
+                inter_action_id = inter_row["action_id"]
+                
+                # Find next events within 3 seconds after interception
+                next_events = game_events[
+                    (game_events["time_seconds"] > inter_time) &
+                    (game_events["time_seconds"] <= inter_time + 3)
+                ]
+                
+                if len(next_events) == 0:
+                    continue
+                
+                # Check if opponent regained possession (Pass Received, Ball Recovery, or Duel won)
+                opponent_regained = next_events[
+                    (next_events["team_id"] != inter_team) &
+                    (
+                        (next_events["type_name"] == "Pass Received") |
+                        (next_events["type_name"] == "Ball Recovery") |
+                        ((next_events["type_name"] == "Duel") & (next_events["result_name"] == "Successful"))
+                    )
+                ]
+                
+                # If opponent regained possession quickly, mark as fail
+                if len(opponent_regained) > 0:
+                    interception_fail_action_ids.add(inter_action_id)
+        
+        # Mark failures in the interception DataFrame
+        interception["interception_fail_flag"] = interception["action_id"].isin(interception_fail_action_ids)
+        
         interception_stats = interception.groupby(["player_id", "player_name_ko", "team_name_ko"]).agg(
             interception_attempt=("action_id", "count"),
-            interception_fail=("is_fail", "sum"),
+            interception_fail=("interception_fail_flag", "sum"),
         ).reset_index()
         results.append(interception_stats)
     
@@ -279,7 +376,7 @@ def aggregate_attack_stats(df: pd.DataFrame, match_info_df: pd.DataFrame = None)
     - receive_to_give_ratio
     - cross_fail_per_game
     - duel_fail_per_game_attack
-    - aerial_fail_per_game
+    - aerial_fail_per_game (공격 지역 start_x >= 85에서의 헤딩 실패)
     """
     results = []
     
@@ -352,14 +449,17 @@ def aggregate_attack_stats(df: pd.DataFrame, match_info_df: pd.DataFrame = None)
         ).reset_index()
         results.append(duel_attack_stats)
     
-    # 7. 키 컸으면 상: 공중볼 경합 실패
+    # 7. 키 컸으면 상: 공격 지역(상대 박스 근처, start_x >= 85)에서의 Duel 실패 = 헤딩 실패
     if len(attack_duels) > 0:
-        aerial_stats = attack_duels[attack_duels["is_fail"]].groupby(
-            ["player_id", "player_name_ko", "team_name_ko"]
-        ).agg(
-            aerial_fail=("action_id", "count"),
-        ).reset_index()
-        results.append(aerial_stats)
+        # 공격 지역에서의 듀얼만 필터링 (상대 진영 끝, 박스 근처)
+        attacking_duels = attack_duels[attack_duels["start_x"] >= 85].copy()
+        if len(attacking_duels) > 0:
+            aerial_stats = attacking_duels[attacking_duels["is_fail"]].groupby(
+                ["player_id", "player_name_ko", "team_name_ko"]
+            ).agg(
+                aerial_fail=("action_id", "count"),  # 헤딩 실패로 해석
+            ).reset_index()
+            results.append(aerial_stats)
     
     # Merge all stats
     if not results:

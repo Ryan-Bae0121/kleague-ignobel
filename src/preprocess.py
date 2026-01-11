@@ -28,6 +28,12 @@ def preprocess_events(df: pd.DataFrame) -> pd.DataFrame:
     df["is_success"] = df["result_name"] == "Successful"
     df["is_fail"] = df["result_name"] == "Unsuccessful"
     
+    # Special handling for Interception: result_name is often NaN
+    # For Interception, we'll mark as success by default, and calculate failures separately
+    interception_mask = df["type_name"] == "Interception"
+    df.loc[interception_mask & df["result_name"].isna(), "is_success"] = True
+    df.loc[interception_mask & df["result_name"].isna(), "is_fail"] = False
+    
     # Card flag
     df["is_card"] = df["result_name"].isin(CARD_SET)
     
