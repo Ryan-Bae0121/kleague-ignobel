@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.io import load_artifact
-from src.ui_components import inject_custom_css, get_team_logo_html
+from src.ui_components import inject_custom_css, get_team_logo_html, render_sidebar_toggle
 import plotly.graph_objects as go
 import plotly.express as px
 
@@ -25,6 +25,8 @@ st.set_page_config(
 # Inject CSS
 inject_custom_css()
 
+# Sidebar toggle button
+render_sidebar_toggle()
 
 st.title("⚽ Team Patterns")
 
