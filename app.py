@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.io import load_artifact
 from src.config import AWARDS
 from src.ui_components import (
-    inject_custom_css, render_hero_section, render_award_card
+    inject_custom_css, render_hero_section, render_award_card, render_sidebar_toggle
 )
 try:
     from src.image_utils import render_team_logo, render_player_photo
@@ -86,6 +86,9 @@ def load_data():
 
 
 def main():
+    # Sidebar toggle button
+    render_sidebar_toggle()
+    
     # Header
     st.markdown('<p class="main-header">🏆 K League 이그노벨상</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">데이터 기반 이그노벨상 시상식</p>', unsafe_allow_html=True)
